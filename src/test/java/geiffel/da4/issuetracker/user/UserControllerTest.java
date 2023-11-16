@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -33,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest
 @ContextConfiguration(classes = UserController.class)
 @Import(ExceptionHandlingAdvice.class)
+@AutoConfigureMockMvc(addFilters = false)
 public class UserControllerTest {
 
     @Autowired
@@ -53,13 +55,14 @@ public class UserControllerTest {
             add(new User(7L, "lower", Fonction.USER));
             add(new User(28L, "way higher", Fonction.DEVELOPPER));
         }};
-        when(userService.getAll()).thenReturn(users);
-        when(userService.getById(7L)).thenReturn(users.get(4));
+
         when(userService.getById(49L)).thenThrow(ResourceNotFoundException.class);
     }
 
     @Test
     void whenGettingAll_shouldGet6_andBe200() throws Exception {
+        when(userService.getAll()).thenReturn(users);
+
         mockMvc.perform(get("/users")
                 .contentType(MediaType.APPLICATION_JSON)
         ).andExpect(status().isOk()
@@ -68,7 +71,19 @@ public class UserControllerTest {
     }
 
     @Test
+    void whenListIsNull_should500() throws Exception {
+        when(userService.getAll()).thenThrow(NullPointerException.class);
+
+        mockMvc.perform(get("/users")
+                .contentType(MediaType.APPLICATION_JSON)
+        ).andExpect(status().isInternalServerError()
+        ).andDo(print());
+    }
+
+    @Test
     void whenGettingId7L_shouldReturnSame() throws Exception{
+        when(userService.getById(7L)).thenReturn(users.get(4));
+
         mockMvc.perform(get("/users/7")
                 .contentType(MediaType.APPLICATION_JSON)
         ).andExpect(status().isOk()
@@ -106,6 +121,7 @@ public class UserControllerTest {
     @Test
     void whenCreatingWithExistingId_should404() throws Exception {
         when(userService.create(any())).thenThrow(ResourceAlreadyExistsException.class);
+
         mockMvc.perform(post("/users")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(new ObjectMapper().writeValueAsString(this.users.get(2)))

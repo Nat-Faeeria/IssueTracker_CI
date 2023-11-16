@@ -28,7 +28,8 @@ public class UserServiceTest {
 
     @Test
     void whenGettingAll_shouldReturn3() {
-        assertEquals(3, userService.getAll().size());
+        List<User> valeur_recuperee = userService.getAll();
+        assertEquals(3, valeur_recuperee.size());
     }
 
     @Test

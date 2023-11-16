@@ -9,14 +9,16 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/users")
+@CrossOrigin(origins = "*")
 public class UserController {
 
-    private UserService userService;
+    private final UserService userService;
 
     @Autowired
     public UserController(UserService userService) {
         this.userService=userService;
     }
+
 
     @GetMapping("")
     public List<User> getAll() {
